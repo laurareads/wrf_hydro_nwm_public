@@ -1109,11 +1109,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
     FRZK   = FRZK_TABLE
     parameters%KDT    = parameters%REFKDT * parameters%DKSAT(1) / parameters%REFDK
 
+! unhard coding urban soil params LKR 5/7/2018
     IF(parameters%URBAN_FLAG)THEN  ! Hardcoding some urban parameters for soil
-       parameters%SMCMAX = 0.45 
-       parameters%SMCREF = 0.42 
-       parameters%SMCWLT = 0.40 
-       parameters%SMCDRY = 0.40 
+!       parameters%SMCMAX = 0.45 
+!       parameters%SMCREF = 0.42 
+!       parameters%SMCWLT = 0.40 
+!       parameters%SMCDRY = 0.40 
        parameters%CSOIL  = 3.E6
     ENDIF
 
