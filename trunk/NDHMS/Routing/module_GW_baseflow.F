@@ -454,11 +454,10 @@ contains
       do i=1,ixrt
         do j=1,jxrt
 !!!    -simple uniform disaggregation (8.31.06)
-           if (gw_strm_msk_lind(i,j).gt.0) then
 
+           if (gw_strm_msk_lind(i,j).gt.0) then
              qinflowbase(i,j) = qout_gwsubbas(gw_strm_msk_lind(i,j))*1000.*DT/ &
                 gwbas_pix_ct(gw_strm_msk_lind(i,j))/dist(i,j,9)     ! units (mm) that gets passed into chan routing as stream inflow
-
            end if
         end do
       end do

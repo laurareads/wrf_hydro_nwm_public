@@ -1092,8 +1092,8 @@
 !DJG put adjustment in for (h) due to qqsfc
 
 !yw changed as following:
-                 tmp_adjust=qqsfc*1000
-                 if((h(i,j) - tmp_adjust) <0 )  then
+                 tmp_adjust=qqsfc*1000.
+                 if((h(i,j) - tmp_adjust) < 0 )  then
 #ifdef HYDRO_D
                    print*, "Error Warning: surface head is negative:  ",i,j,ixx0,jyy0, &
                        h(i,j) - tmp_adjust
@@ -2832,7 +2832,7 @@
              if(nlst_rt(did)%OVRTSWCRT .eq. 1) then
                  call OverlandRouting (nlst_rt(did)%DT, nlst_rt(did)%DTRT_TER, nlst_rt(did)%rt_option, &
                           rt_domain(did)%ixrt, rt_domain(did)%jxrt,rt_domain(did)%LAKE_MSKRT, &
-                          rt_domain(did)%INFXSUBRT, rt_domain(did)%RETDEPRT,rt_domain(did)%OVROUGHRT, &
+                          rt_domain(did)%INFXSUBRT+rt_domain(did)%qinflowbase, rt_domain(did)%RETDEPRT,rt_domain(did)%OVROUGHRT, &
                           rt_domain(did)%SOXRT, rt_domain(did)%SOYRT, rt_domain(did)%SFCHEADSUBRT,  &
                           rt_domain(did)%DHRT, rt_domain(did)%CH_NETRT, rt_domain(did)%QSTRMVOLRT, &
                           rt_domain(did)%LAKE_INFLORT,rt_domain(did)%QBDRYRT, &

@@ -1349,7 +1349,8 @@ end subroutine get_albedo12m_netcdf
 
                 IXXRT=I*AGGFACTRT-AGGFACXRT
                 JYYRT=J*AGGFACTRT-AGGFACYRT
-                IF(ch_netrt(IXXRT,JYYRT).ge.0) then  !If channel grid cell
+                !IF(ch_netrt(IXXRT,JYYRT).ge.0) then  !If channel grid cell
+                IF(ch_netrt(IXXRT,JYYRT) .eq. -50) then  !If channel grid cell
                   gw_strm_msk(IXXRT,JYYRT) = GWSUBBASMSK(i,j)  ! assign coarse grid basn indx to chan grid
                 END IF
 
