@@ -1016,17 +1016,18 @@
 !!! Declare Local Variables
 
         REAL :: dhdx,dhdy,alfax,alfay
-        REAL :: hh53,qqsfc,hh,dt_new,hmax
+        REAL :: hh53,qqsfc,hh,dt_new,hmax,dt_cnt
         REAL :: sfx,sfy
         REAL :: tmp_adjust
 
-        INTEGER :: i,j
+        INTEGER :: i,j, iii, jjj
         REAL IXX8,IYY8
         INTEGER  IXX0,JYY0,index, SO8RT_D(XX,YY,3)
         REAL  tmp_gsize,hsum
+        INTEGER prnx, prny
+        LOGICAL prnOn
 
 !!! Initialize variables
-
 
 
 !!! Begin Routing of Excess Rainfall over the Watershed
@@ -1034,6 +1035,13 @@
         DH=0.
         DH_tmp=0.
         QBDRY_tmp =0.
+        dt_new = dt
+        dt_cnt = 1
+
+! Add cells to print
+        prnx = 316
+        prny = 166
+        prnOn = .TRUE.
 
 !!! Loop to route water
         do j=2,YY-1
@@ -1045,9 +1053,48 @@
              tmp_gsize = 1.0/gsize(i,j,index)
              sfx = so8RT(i,j,index)-(h(IXX0,JYY0)-h(i,j))*0.001*tmp_gsize
              hmax = h(i,j)*0.001  !Specify max head for mass flux limit...
+
+#ifdef HYDRO_D
+                 if (prnOn) then
+                 if (i .eq. prnx .and. j .eq. prny) then
+                     do iii=i-1,i+1
+                       do jjj=j-1,j+1
+                         print*, "ADPRINT before sfx check: iii,jjj,sfx =", iii,jjj,sfx
+                         print*, "ADPRINT before sfx check: iii,jjj,index,IXX0,JYY0",iii,jjj,index,IXX0,JYY0
+                         print*, "ADPRINT before sfx check: iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index) ", &
+                            iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index)
+                         print*, "ADPRINT before sfx check: iii,jjj,alfax, hh, hh53, qqsfc ", iii,jjj,alfax, hh, hh53, qqsfc
+                         print*, "ADPRINT before sfx check: iii,jjj,dist_rough, retent_dep ", iii,jjj,dist_rough(iii,jjj), retent_dep(iii,jjj)
+                       end do
+                     end do
+                 end if
+                 end if
+#endif
+
              if(sfx .lt. 1E-20) then
-               call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,gsize(i,j,:),sfx,XX,YY)
+               call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,gsize(i,j,:),sfx,XX,YY,index)
+               tmp_gsize = 1.0/gsize(i,j,index)
              end if
+
+#ifdef HYDRO_D
+#ifdef HYDRO_D
+                 if (prnOn) then
+                 if (i .eq. prnx .and. j .eq. prny) then
+                     do iii=i-1,i+1
+                       do jjj=j-1,j+1
+                         print*, "ADPRINT after sfx check: iii,jjj,sfx =", iii,jjj,sfx
+                         print*, "ADPRINT after sfx check: iii,jjj,index,IXX0,JYY0",iii,jjj,index,IXX0,JYY0
+                         print*, "ADPRINT after sfx check: iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index) ", &
+                            iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index)
+                         print*, "ADPRINT after sfx check: iii,jjj,alfax, hh, hh53, qqsfc ", iii,jjj,alfax, hh, hh53, qqsfc
+                         print*, "ADPRINT after sfx check: iii,jjj,dist_rough, retent_dep ", iii,jjj,dist_rough(iii,jjj), retent_dep(iii,jjj)
+                       end do
+                     end do
+                 end if
+                 end if
+#endif
+#endif
+
              if(IXX0 > 0) then  ! do the rest if the lowest grid can be found.
                  if(sfx .lt. 1E-20) then
 #ifdef HYDRO_D
@@ -1065,8 +1112,28 @@
 ! Calculate q-flux...
                  qqsfc = alfax*hh53*dt * tmp_gsize
 
+#ifdef HYDRO_D
+#ifdef HYDRO_D
+                 if (prnOn) then
+                 if (i .eq. prnx .and. j .eq. prny) then
+                     do iii=i-1,i+1
+                       do jjj=j-1,j+1
+                         print*, "ADPRINT after calc: iii,jjj,sfx =", iii,jjj,sfx
+                         print*, "ADPRINT after calc: iii,jjj,index,IXX0,JYY0",iii,jjj,index,IXX0,JYY0
+                         print*, "ADPRINT after calc: iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index) ", &
+                            iii,jjj,so8RT(iii,jjj,index), h(IXX0,JYY0), h(iii,jjj), gsize(iii,jjj,index)
+                         print*, "ADPRINT after calc: iii,jjj,alfax, hh, hh53, qqsfc ", iii,jjj,alfax, hh, hh53, qqsfc
+                         print*, "ADPRINT after calc: iii,jjj,dist_rough, retent_dep ", iii,jjj,dist_rough(iii,jjj), retent_dep(iii,jjj)
+                       end do
+                     end do
+                 end if
+                 end if
+#endif
+#endif
+
 !Courant check (simple mass limit on overland flow)...
-                 if (qqsfc.ge.(hmax*dt*tmp_gsize)) qqsfc = hmax*dt*tmp_gsize
+                 !if (qqsfc.ge.(hmax*dt*tmp_gsize)) qqsfc = hmax*dt*tmp_gsize
+                 qqsfc = min(qqsfc, 0.6*hmax)
 
 ! Accumulate directional fluxes on routing subgrid...
                  if (IXX0.gt.i) then
@@ -1149,67 +1216,71 @@
 
 
 !DJG ----------------------------------------------------------------
-        SUBROUTINE GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,sox,tmp_gsize,max,XX,YY)
+        SUBROUTINE GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,sox,tmp_gsize,maxSlp,XX,YY,indxOut)
           implicit none
-          INTEGER:: IXX0,JYY0,IXX8,JYY8, XX, YY
-          INTEGER, INTENT(IN) :: I,J
-
+          INTEGER, INTENT(INOUT) :: IXX0,JYY0
+          INTEGER, INTENT(IN) :: I,J,XX,YY
+          INTEGER, INTENT(INOUT) :: indxOut
           REAL,INTENT(IN) :: H(XX,YY),RETENT_DEP(XX,YY),sox(XX,YY,8),tmp_gsize(9)
-          REAL  max
+          INTEGER :: IXX8,JYY8
+          REAL, INTENT(INOUT) :: maxSlp
+
           IXX0 = -1
-          max = 0
+          maxSlp = 0
+          indxOut = 0
           if (h(I,J).LE.retent_dep(I,J)) return
 
           IXX8 = I
           JYY8 = J+1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,1),IXX0,JYY0,max,tmp_gsize(1),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,1),IXX0,JYY0,maxSlp,tmp_gsize(1),XX,YY,1,indxOut)
 
           IXX8 = I+1
           JYY8 = J+1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,2),IXX0,JYY0,max,tmp_gsize(2),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,2),IXX0,JYY0,maxSlp,tmp_gsize(2),XX,YY,2,indxOut)
 
           IXX8 = I+1
           JYY8 = J
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,3),IXX0,JYY0,max,tmp_gsize(3),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,3),IXX0,JYY0,maxSlp,tmp_gsize(3),XX,YY,3,indxOut)
 
           IXX8 = I+1
           JYY8 = J-1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,4),IXX0,JYY0,max,tmp_gsize(4),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,4),IXX0,JYY0,maxSlp,tmp_gsize(4),XX,YY,4,indxOut)
 
           IXX8 = I
           JYY8 = J-1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,5),IXX0,JYY0,max,tmp_gsize(5),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,5),IXX0,JYY0,maxSlp,tmp_gsize(5),XX,YY,5,indxOut)
 
           IXX8 = I-1
           JYY8 = J-1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,6),IXX0,JYY0,max,tmp_gsize(6),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,6),IXX0,JYY0,maxSlp,tmp_gsize(6),XX,YY,6,indxOut)
 
           IXX8 = I-1
           JYY8 = J
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,7),IXX0,JYY0,max,tmp_gsize(7),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,7),IXX0,JYY0,maxSlp,tmp_gsize(7),XX,YY,7,indxOut)
 
           IXX8 = I-1
           JYY8 = J+1
-          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,8),IXX0,JYY0,max,tmp_gsize(8),XX,YY)
+          call GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox(:,:,8),IXX0,JYY0,maxSlp,tmp_gsize(8),XX,YY,8,indxOut)
         RETURN
         END SUBROUTINE GETMAX8DIR
 
         SUBROUTINE GET8DIR(IXX8,JYY8,I,J,H,RETENT_DEP,sox   &
-            ,IXX0,JYY0,max,tmp_gsize,XX,YY)
+            ,IXX0,JYY0,maxSlp,tmp_gsize,XX,YY,indxIn,indxOut)
         implicit none
-        integer,INTENT(INOUT) ::IXX0,JYY0
-        INTEGER, INTENT(IN) :: I,J,IXX8,JYY8,XX,YY
+        integer,INTENT(INOUT) ::IXX0,JYY0,indxOut
+        INTEGER, INTENT(IN) :: I,J,IXX8,JYY8,XX,YY,indxIn
         REAL,INTENT(IN) :: H(XX,YY),RETENT_DEP(XX,YY),sox(XX,YY)
-        REAL, INTENT(INOUT) ::max
+        REAL, INTENT(INOUT) ::maxSlp
         real, INTENT(IN) :: tmp_gsize
         real :: sfx
 
              sfx = sox(i,j)-(h(IXX8,JYY8)-h(i,j))*0.001/tmp_gsize
              if(sfx .le. 0 ) return
-             if(max < sfx ) then
+             if(maxSlp < sfx ) then
                    IXX0 = IXX8
                    JYY0 = JYY8
-                   max = sfx
+                   maxSlp = sfx
+                   indxOut = indxIn
              end if
 
         END SUBROUTINE GET8DIR
