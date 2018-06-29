@@ -1026,9 +1026,12 @@
         REAL  tmp_gsize,hsum
         INTEGER prnx, prny
         LOGICAL prnOn
+        REAL :: cour, gravity, dtNew, dtFrac
 
 !!! Initialize variables
 
+        cour = 0.2
+        gravity = 9.81
 
 !!! Begin Routing of Excess Rainfall over the Watershed
 
@@ -1041,7 +1044,7 @@
 ! Add cells to print
         prnx = 316
         prny = 166
-        prnOn = .TRUE.
+        prnOn = .FALSE.
 
 !!! Loop to route water
         do j=2,YY-1
@@ -1071,12 +1074,11 @@
                  end if
 #endif
 
-             if(sfx .lt. 1E-20) then
+!             if(sfx .lt. 1E-20) then
                call GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,so8rt,gsize(i,j,:),sfx,XX,YY,index)
                tmp_gsize = 1.0/gsize(i,j,index)
-             end if
+!             end if
 
-#ifdef HYDRO_D
 #ifdef HYDRO_D
                  if (prnOn) then
                  if (i .eq. prnx .and. j .eq. prny) then
@@ -1092,7 +1094,6 @@
                      end do
                  end if
                  end if
-#endif
 #endif
 
              if(IXX0 > 0) then  ! do the rest if the lowest grid can be found.
@@ -1113,7 +1114,6 @@
                  qqsfc = alfax*hh53*dt * tmp_gsize
 
 #ifdef HYDRO_D
-#ifdef HYDRO_D
                  if (prnOn) then
                  if (i .eq. prnx .and. j .eq. prny) then
                      do iii=i-1,i+1
@@ -1129,11 +1129,15 @@
                  end if
                  end if
 #endif
-#endif
 
 !Courant check (simple mass limit on overland flow)...
                  !if (qqsfc.ge.(hmax*dt*tmp_gsize)) qqsfc = hmax*dt*tmp_gsize
                  qqsfc = min(qqsfc, 0.6*hmax)
+! New timestep based scaling factor on flux
+                 !dtNew = (cour * sqrt(2*gsize(I,J,index)*gsize(I,J,index))) / &
+                 !           ( (hh**(2./3.)) * sqrt(sfx)/dist_rough(i,j) + sqrt(gravity*hh) )
+                 !dtFrac = min(dtNew/dt, 1.0)
+                 !qqsfc = min(qqsfc, dtFrac*hmax)
 
 ! Accumulate directional fluxes on routing subgrid...
                  if (IXX0.gt.i) then
