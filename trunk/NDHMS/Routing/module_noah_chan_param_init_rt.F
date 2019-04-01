@@ -36,6 +36,7 @@ CONTAINS
     real,dimension(NCHANTYPES), intent(out)              :: BOTWID,HLINK_INIT,CHAN_SS,CHMann
     real,dimension(NCHANTYPES), intent(out), optional    :: TOPWID, TOPWIDCC, NCC
     character(LEN=11) :: DATATYPE
+    character(len=127) :: field_names
 
 !-----SPECIFY CHANNEL RELATED CHARACTERISTICS :
 !             ORDER: Strahler Stream Order
@@ -60,30 +61,38 @@ CONTAINS
 #ifdef HYDRO_D
     PRINT *, DATATYPE
 #endif
-    READ (IUNIT,*)CHANCATS,IINDEX
+    READ (IUNIT,*) CHANCATS, IINDEX, field_names
 2000 FORMAT (A11)
 
-!-----Read in Channel Parameters as functions of stream order...
+    !-----Read in Channel Parameters as functions of stream order...
 
-    IF(DATATYPE.EQ.'StreamOrder')THEN
+    IF (DATATYPE == 'StreamOrder') THEN
 #ifdef HYDRO_D
-       PRINT *, 'CHANNEL DATA SOURCE TYPE = ',DATATYPE,' FOUND',           &
-            CHANCATS,' CATEGORIES'
+       PRINT *, 'CHANNEL DATA SOURCE TYPE = ', DATATYPE, ' FOUND', &
+            CHANCATS, ' CATEGORIES'
 #endif
-       do ORDER=1,CHANCATS
-          ! assumption: if topwid is present, then the rest are too. Should really check for all of them.
-          if (present(TOPWID)) then
-              read (IUNIT,*) IINDEX, BOTWID(ORDER), TOPWID(ORDER), HLINK_INIT(ORDER), CHAN_SS(ORDER), CHMann(ORDER), &
-                   TOPWIDCC(ORDER), NCC(ORDER)
-          else
-              read (IUNIT,*) IINDEX, BOTWID(ORDER), HLINK_INIT(ORDER), CHAN_SS(ORDER), CHMann(ORDER)
-          end if
+        do ORDER = 1, CHANCATS
+        if (index(trim(field_names), 'n_CC') > 0) then
+            ! assumption: if file has 'n_CC' in the field names, it's a Compound Channel file. This could be improved.
+            if (present(TOPWID)) then
+                read (IUNIT, *) IINDEX, BOTWID(ORDER), TOPWID(ORDER), HLINK_INIT(ORDER), CHAN_SS(ORDER),  &
+                                CHMann(ORDER), TOPWIDCC(ORDER), NCC(ORDER)
+            else
+                error stop "Compound Channel params table supplied but compound_channel == .FALSE."
+            end if
+        else
+            if (present(TOPWID)) then
+                error stop "compound_channel == .TRUE. but Compound Channel params table not supplied"
+            else
+                read (IUNIT, *) IINDEX, BOTWID(ORDER), HLINK_INIT(ORDER), CHAN_SS(ORDER), CHMann(ORDER)
+            end if
+        end if
 
 #ifdef HYDRO_D
           if (present(topwid)) then
-              PRINT *, IINDEX,BOTWID(ORDER),TOPWID(ORDER),&
-                HLINK_INIT(ORDER),CHAN_SS(ORDER),   &
-                CHMann(ORDER),TOPWIDCC(ORDER),NCC(ORDER)
+              PRINT *, IINDEX, BOTWID(ORDER), TOPWID(ORDER),        &
+                       HLINK_INIT(ORDER), CHAN_SS(ORDER),           &
+                       CHMann(ORDER), TOPWIDCC(ORDER), NCC(ORDER)
           else
               PRINT *, IINDEX, BOTWID(ORDER), HLINK_INIT(ORDER), CHAN_SS(ORDER), CHMann(ORDER)
           end if
@@ -92,7 +101,7 @@ CONTAINS
     ENDIF
 
 
-!-----Read in Channel Parameters as functions of ???other method??? (TBC)...
+    !-----Read in Channel Parameters as functions of ???other method??? (TBC)...
 
 
 2002 CONTINUE
