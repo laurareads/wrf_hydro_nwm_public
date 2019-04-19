@@ -5245,11 +5245,11 @@ end subroutine mpp_output_chrt
 
      call write_IO_rt_int(CH_NETLNK_in, CH_NETLNK)
 
-    if(my_id.eq.IO_id) then
-        call  output_chrtgrd(igrid, split_output_count, g_ixrt,g_jxrt, &
-           GNLINKS, CH_NETLNK, startdate, date, &
-           g_qlink, dt, geo_finegrid_flnm)
-    endif
+     if (my_id == IO_id) then
+         call output_chrtgrd(igrid, split_output_count, g_ixrt,g_jxrt, &
+                 GNLINKS, CH_NETLNK, startdate, date, &
+                 g_qlink, dt, geo_finegrid_flnm)
+     endif
     
      if(allocated(g_qlink)) deallocate(g_qlink)
      if(allocated(CH_NETLNK)) deallocate(CH_NETLNK)
@@ -5266,9 +5266,9 @@ end subroutine mpp_output_chrt
      integer,                                  intent(in) :: split_output_count
      integer,                                  intent(in) :: NLINKS,ixrt,jxrt
      real,                                     intent(in) :: dt
-     real, dimension(:,:),                intent(in) :: qlink
+     real, dimension(:,:),                     intent(in) :: qlink
      integer, dimension(IXRT,JXRT),            intent(in) :: CH_NETLNK
-     character(len=*),          intent(in)     :: geo_finegrid_flnm
+     character(len=*),                         intent(in) :: geo_finegrid_flnm
      character(len=*),                         intent(in) :: startdate
      character(len=*),                         intent(in) :: date
      character(len=32)  :: convention
@@ -5371,7 +5371,7 @@ end subroutine mpp_output_chrt
 !DJG inv    do j=jxrt,1,-1
     do j=1,jxrt
      do i=1,ixrt
-       if(CH_NETLNK(i,j).GE.0) then
+       if (CH_NETLNK(i,j) >= 0) then
          tmpflow(i,j) = qlink(CH_NETLNK(i,j),1) 
        else
          tmpflow(i,j) = -9E15

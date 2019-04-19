@@ -245,144 +245,166 @@ return
 end subroutine LEVELPOOL
 ! ----------------------------------------------------------------
 
- 
+
 ! ------------------------------------------------
 !   FUNCTION Diffusive wave
 ! ------------------------------------------------
-real function DIFFUSION(nod,z1,z20,h1,h2,dx,n, &
-     Bw, Cs, Tw, TwCC, nCC)
-implicit none
-!-- channel geometry and characteristics
-real    :: Bw         !-bottom width (meters)
-real    :: Cs         !-Channel side slope slope
-real    :: dx         !-channel lngth (m)
-real,intent(in)    :: n          !-mannings coefficient
-real    :: R          !-Hydraulic radius
-real    :: AREA,AREAC !- wetted area, of channel and compound
-real    :: h1,h2      !-tmp height variables
-real    :: z1,z2      !-z1 is 'from', z2 is 'to' elevations
-real    :: z          !-channel side distance
-real    :: w          !-upstream weight
-real    :: Ku,Kd      !-upstream and downstream conveyance
-real    :: Kf         !-final face conveyance
-real    :: Sf         !-friction slope
-real    :: sgn        !-0 or 1 
-integer :: nod         !- node
-real    :: bfd,Tw,z20,dzx,WP,WPC
-real,intent(in)    :: TwCC,nCC  ! top width of compound channel, wetted perm of chan and compound
-real    :: TwCClocal,nCClocal ! top width of compound channel, wetted perm of chan and compound
+real function DIFFUSION(nod, z1, z20, h1, h2, dx, n, Bw, Cs, Tw, TwCC, nCC, &
+        Ku_out, Kd_out, Kf_out, bfd_out)
+    implicit none
 
+    !-- channel geometry and characteristics
+    real :: Bw         !-bottom width (meters)
+    real :: Cs         !-Channel side slope slope
+    real :: dx         !-channel lngth (m)
+    real, intent(in) :: n          !-mannings coefficient
+    real :: R          !-Hydraulic radius
+    real :: AREA, AREAC !- wetted area, of channel and compound
+    real :: h1, h2      !-tmp height variables
+    real :: z1, z2      !-z1 is 'from', z2 is 'to' elevations
+    real :: z          !-channel side distance
+    real :: w          !-upstream weight
+    real :: Ku, Kd      !-upstream and downstream conveyance
+    real :: Kf         !-final face conveyance
+    real :: bfd        !-bankfull depth
+    real :: Sf         !-friction slope
+    real :: sgn        !-0 or 1
+    integer :: nod         !- node
+    real :: Tw, z20, dzx, WP, WPC
+    real, intent(in) :: TwCC, nCC  ! top width of compound channel, wetted perm of chan and compound
+    real :: TwCClocal, nCClocal ! top width of compound channel, wetted perm of chan and compound
 
-! added by Wei Yu for bad data.
-! scale factor to impose minimum slope in channel. 
-dzx = (z1 - z20)/dx
-if(dzx .lt. 0.002) then
-   z2 = z1 - dx*0.02  
-else
-   z2 = z20
-endif
-!end 
+    !! optionally, copy out these values if the arguments are present
+    real, optional, intent(out) :: Ku_out, Kd_out, Kf_out, bfd_out
 
-if (n.le.0.0.or.Cs.le.0.or.Bw.le.0) then
-   print *, "Error in Diffusion function ->channel coefficients"
-   print *, "nod, n, Cs, Bw", nod, n, Cs, Bw 
-   call hydro_stop("In DIFFUSION() - Error channel coefficients.")
-endif
+    ! added by Wei Yu for bad data.
+    ! scale factor to impose minimum slope in channel.
+    dzx = (z1 - z20) / dx
+    if (dzx < 0.002) then
+        z2 = z1 - dx * 0.02
+    else
+        z2 = z20
+    endif
+    !end
 
-   if(Cs .eq. 0.00000000) then
-     z = 1.0
-   else
-     z = 1.0/Cs          !channel side distance (m)
-   endif
+    if (n<=0.0.or.Cs<=0.or.Bw<=0) then
+        print *, "Error in Diffusion function ->channel coefficients"
+        print *, "nod, n, Cs, Bw", nod, n, Cs, Bw
+        call hydro_stop("In DIFFUSION() - Error channel coefficients.")
+    endif
 
-!   Tw = (Bw + 2*(z*Bw))
-!   read these in from the CHANPARM.TBL file. 
+    if (Cs == 0.00000000) then
+        z = 1.0
+    else
+        z = 1.0 / Cs          !channel side distance (m)
+    endif
 
- !  Tw = 1.5 * Bw
- !  TwCC = Tw * 5
- !  nCC = 2 * n
- 
-   !temporarily, treat the TwCC and nCC read in from CHANPARM as multipliers
+    !   Tw = (Bw + 2*(z*Bw))
+    !   read these in from the CHANPARM.TBL file.
+
+    !  Tw = 1.5 * Bw
+    !  TwCC = Tw * 5
+    !  nCC = 2 * n
+
+    !temporarily, treat the TwCC and nCC read in from CHANPARM as multipliers
     TwCClocal = TwCC * Tw
     nCClocal = nCC * n
 
-   if(Bw .gt. Tw) then   !effectively infinite deep bankful
-     bfd = Bw/0.00001
-   elseif (Bw .eq. Tw) then
-     bfd =  Bw/(2.0*z)  !bankfull depth is effectively
-     print *, "Bw, Tw, TwCC, n, nCC", Bw, Tw, TwCClocal, n, nCClocal
-   else
-     bfd =  (Tw - Bw)/(2.0*z)  !bankfull depth (m)
-   endif
+    if (Bw > Tw) then   !effectively infinite deep bankfull
+        bfd = Bw / 0.00001
+    elseif (Bw == Tw) then
+        bfd = Bw / (2.0 * z)  !bankfull depth is effectively
+        print *, "Bw, Tw, TwCC, n, nCC", Bw, Tw, TwCClocal, n, nCClocal
+    else
+        bfd = (Tw - Bw) / (2.0 * z)  !bankfull depth (m)
+    endif
 
-!        Sf = ((z1+h1)-(z2+h2))/dx  !-- compute the friction slope
-!if(z1 .eq. z2) then
-! Sf = ((z1-(z2-0.01))+(h1-h2))/dx  !-- compute the friction slope
-!else
-!         Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
-!endif
+    !        Sf = ((z1+h1)-(z2+h2))/dx  !-- compute the friction slope
+    !if(z1 .eq. z2) then
+    ! Sf = ((z1-(z2-0.01))+(h1-h2))/dx  !-- compute the friction slope
+    !else
+    !         Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
+    !endif
 
-!modifieed by Wei Yu for false geography data
-if(abs(z1-z2) .gt. 1.0E5) then
+    !modifieed by Wei Yu for false geography data
+    if (abs(z1 - z2) > 1.0E5) then
 #ifdef HYDRO_D
-   print*, "WARNING: huge slope rest to 0 for channel grid.", z1,z2
+            print*, "WARNING: huge slope rest to 0 for channel grid.", z1, z2
 #endif
-   Sf = ((h1-h2))/dx  !-- compute the friction slope
-else
-   Sf = ((z1-z2)+(h1-h2))/dx  !-- compute the friction slope
-endif
-!end  modfication
+        Sf = ((h1 - h2)) / dx  !-- compute the friction slope
+    else
+        Sf = ((z1 - z2) + (h1 - h2)) / dx  !-- compute the friction slope
+    endif
+    !end  modfication
 
-sgn = SGNf(Sf)            !-- establish sign
-w = 0.5*(sgn + 1.)        !-- compute upstream or downstream weighting
+    sgn = SGNf(Sf)            !-- establish sign
+    w = 0.5 * (sgn + 1.)        !-- compute upstream or downstream weighting
 
-!R = ((Bw + z*h1)*h1) / (Bw+ 2.0*h1*sqrt(1.0 + z*z)) !-- Hyd Radius
-!AREA = (Bw + z*h1)*h1        !-- Flow area
- AREAC=0.0
- if(h1 .gt. bfd) then !water outside of defined channel
-   AREA =  (Bw + bfd * z) * bfd
-   AREAC = (TwCClocal * (h1-bfd)) !assume compound component is rect. chan, that's 3 times the Tw
-   WP = (Bw + 2.0 * bfd * sqrt(1.0 + z*z))
-   WPC = TwCClocal + (2.0 * (h1-bfd)) !WPC is 2 times the Tw
-   R   = (AREA + AREAC)/(WP +WPC)  ! hydraulic radius
-   Ku = (1.0/nCClocal)*(R**(2./3.))*(AREA +AREAC)    !-- convenyance
- else
-   AREA = (Bw + h1 * z ) * h1
-   WP = (Bw + 2.0 * h1 * sqrt(1.0 + z*z))
-   if(WP .gt. 0.0) then
-   R = AREA/WP
-   else
-   R = 0.0
-   endif
-   Ku = (1.0/n)*(R**(2./3.))*(AREA +AREAC)    !-- convenyance
- endif
+    !R = ((Bw + z*h1)*h1) / (Bw+ 2.0*h1*sqrt(1.0 + z*z)) !-- Hyd Radius
+    !AREA = (Bw + z*h1)*h1        !-- Flow area
+    AREAC = 0.0
+    if (h1 > bfd) then !water outside of defined channel
+        AREA = (Bw + bfd * z) * bfd
+        AREAC = (TwCClocal * (h1 - bfd)) !assume compound component is rect. chan, that's 3 times the Tw
+        WP = (Bw + 2.0 * bfd * sqrt(1.0 + z * z))
+        WPC = TwCClocal + (2.0 * (h1 - bfd)) !WPC is 2 times the Tw
+        R = (AREA + AREAC) / (WP + WPC)  ! hydraulic radius
+        Ku = (1.0 / nCClocal) * (R**(2. / 3.)) * (AREA + AREAC)    !-- convenyance
+    else
+        AREA = (Bw + h1 * z) * h1
+        WP = (Bw + 2.0 * h1 * sqrt(1.0 + z * z))
+        if (WP > 0.0) then
+            R = AREA / WP
+        else
+            R = 0.0
+        endif
+        Ku = (1.0 / n) * (R**(2. / 3.)) * (AREA + AREAC)    !-- convenyance
+    endif
 
-!R = ((Bw + z*h2)*h2)/(Bw + 2.0*h2*sqrt(1.0 + z*z)) !-- Hyd Radius
-!AREA = (Bw + z*h2)*h2        !-- Flow area
-AREAC=0.0
- if(h2 .gt. bfd) then !water outside of defined channel
-   AREA =  (Bw + bfd * z) * bfd
-   AREAC = (TwCClocal * (h2-bfd)) !assume compound component is rect. chan, that's 3 times the Tw
-   WP = (Bw + 2.0 * bfd * sqrt(1.0 + z*z))
-   WPC = TwCClocal + (2.0 * (h2-bfd)) !WPC is 2 times the Tw
-   R   = (AREA + AREAC)/(WP +WPC)  ! hydraulic radius
-   Kd = (1.0/nCClocal)*(R**(2.0/3.0))*(AREA +AREAC)    !-- convenyance
- else
-   AREA = (Bw + h2 * z ) * h2
-   WP = (Bw + 2.0 * h2 * sqrt(1.0 + z*z))
-   if(WP .gt. 0.0) then
-   R = AREA/ WP
-   else
-   R = 0.0
-   endif
-   Kd = (1.0/n)*(R**(2.0/3.0))*(AREA +AREAC)    !-- convenyance
- endif
+    !R = ((Bw + z*h2)*h2)/(Bw + 2.0*h2*sqrt(1.0 + z*z)) !-- Hyd Radius
+    !AREA = (Bw + z*h2)*h2        !-- Flow area
+    AREAC = 0.0
+    if (h2 > bfd) then !water outside of defined channel
+        AREA = (Bw + bfd * z) * bfd
+        AREAC = (TwCClocal * (h2 - bfd)) !assume compound component is rect. chan, that's 3 times the Tw
+        WP = (Bw + 2.0 * bfd * sqrt(1.0 + z * z))
+        WPC = TwCClocal + (2.0 * (h2 - bfd)) !WPC is 2 times the Tw
+        R = (AREA + AREAC) / (WP + WPC)  ! hydraulic radius
+        Kd = (1.0 / nCClocal) * (R**(2.0 / 3.0)) * (AREA + AREAC)    !-- convenyance
+    else
+        AREA = (Bw + h2 * z) * h2
+        WP = (Bw + 2.0 * h2 * sqrt(1.0 + z * z))
+        if (WP > 0.0) then
+            R = AREA / WP
+        else
+            R = 0.0
+        endif
+        Kd = (1.0 / n) * (R**(2.0 / 3.0)) * (AREA + AREAC)    !-- convenyance
+    endif
 
- Kf =  (1.0-w)*Kd + w*Ku      !-- conveyance 
+    Kf = (1.0 - w) * Kd + w * Ku      !-- conveyance
 
-DIFFUSION = Kf * sqrt(abs(Sf))*sgn
+    !! copy out the conveyances and bankfull depth if the out arguments were supplied
 
-100 format('z1,z2,h1,h2,kf,Dif, Sf, sgn  ',f8.3,2x,f8.3,2x,f8.4,2x,f8.4,2x,f8.3,2x,f8.3,2x,f8.3,2x,f8.0)
+    if (present(Ku_out)) then
+        Ku_out = Ku
+    end if
+
+    if (present(Kd_out)) then
+        Kd_out = Kd
+    end if
+
+    if (present(Kf_out)) then
+        Kf_out = Kf
+    end if
+
+    if (present(bfd_out)) then
+        bfd_out = bfd
+    end if
+
+    DIFFUSION = Kf * sqrt(abs(Sf)) * sgn
+
+    100 format('z1,z2,h1,h2,kf,Dif, Sf, sgn  ', f8.3, 2x, f8.3, 2x, f8.4, 2x, f8.4, 2x, f8.3, 2x, f8.3, 2x, f8.3, 2x, f8.0)
 
 end function DIFFUSION
 ! ----------------------------------------------------------------
@@ -751,7 +773,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 !   SUBROUTINE drive_CHANNEL
 ! ------------------------------------------------
 ! ------------------------------------------------
-     Subroutine drive_CHANNEL(latval,lonval,KT, IXRT,JXRT, SUBRTSWCRT, &
+     subroutine drive_CHANNEL(latval,lonval,KT, IXRT,JXRT, SUBRTSWCRT, &
        QSUBRT, LAKEINFLORT, QSTRMVOLRT, TO_NODE, FROM_NODE, &
        TYPEL, ORDER, MAXORDER, NLINKS, CH_NETLNK, CH_NETRT, CH_LNKRT, &
        LAKE_MSKRT, DT, DTCT, DTRT_CH,MUSK, MUSX, QLINK, &
@@ -768,8 +790,8 @@ END SUBROUTINE SUBMUSKINGCUNGE
 #endif
        , CH_LNKRT_SL &
        ,gwBaseSwCRT, gwHead, qgw_chanrt, gwChanCondSw, gwChanCondConstIn, &
-       gwChanCondConstOut, velocity)
-
+       gwChanCondConstOut, velocity, &
+             ku, kd, kf, bfd)
 
        IMPLICIT NONE
 
@@ -808,6 +830,10 @@ END SUBROUTINE SUBMUSKINGCUNGE
         REAL ,  DIMENSION(NLINKS,2) :: tmpQLINK
         REAL , INTENT(INOUT), DIMENSION(NLINKS)   :: HLINK
         REAL, dimension(NLINKS), intent(inout)    :: QLateral !--lateral flow
+
+        real, intent(out), dimension(:)           :: ku, kd, kf
+        real, intent(out), dimension(:)           :: bfd
+
         REAL, INTENT(IN)                          :: DT    !-- model timestep
         REAL, INTENT(IN)                          :: DTRT_CH  !-- routing timestep
         REAL, INTENT(INOUT)                       :: DTCT
@@ -1452,7 +1478,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
             if(TYPEL(i) == 0) then !-- regular channel node, finalize head and flow
                    QLINK(i,1)=DIFFUSION(i,ZELEV(FROM_NODE(i)),ZELEV(TO_NODE(i)), &
                       HLINKTMP(FROM_NODE(i)),HLINKTMP(TO_NODE(i)), &
-                      CHANLEN(i), MannN(i), Bw(i), ChSSlp(i), Tw(i), Tw_CC(i), n_CC(i))
+                      CHANLEN(i), MannN(i), Bw(i), ChSSlp(i), Tw(i), Tw_CC(i), n_CC(i), &
+                      ku(i), kd(i), kf(i), bfd(i))
             endif
          enddo
 

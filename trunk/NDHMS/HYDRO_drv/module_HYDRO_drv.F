@@ -433,8 +433,8 @@ if(nlst_rt(did)%SUBRTSWCRT         .gt. 0 .or. &
    endif ! End of checking for io_form_outputs flag value      
       
 #ifdef MPP_LAND
-              if(nlst_rt(did)%CHRTOUT_GRID  .eq. 1)  then
-                 if(nlst_rt(did)%io_form_outputs .eq. 0) then
+              if(nlst_rt(did)%CHRTOUT_GRID  == 1)  then
+                 if(nlst_rt(did)%io_form_outputs == 0) then                       !! Deprecated, for use in Noah only
                     call mpp_output_chrtgrd(nlst_rt(did)%igrid, nlst_rt(did)%split_output_count, &
                     RT_DOMAIN(did)%ixrt,RT_DOMAIN(did)%jxrt, RT_DOMAIN(did)%NLINKS,   &
                     RT_DOMAIN(did)%GCH_NETLNK, &
@@ -445,17 +445,17 @@ if(nlst_rt(did)%SUBRTSWCRT         .gt. 0 .or. &
                     RT_DOMAIN(did)%g_ixrt,RT_DOMAIN(did)%g_jxrt )
 #endif
                  else
-                    call output_chrtout_grd_NWM(did,nlst_rt(did)%igrid)
+                    call output_chrtout_grd_NWM(did,nlst_rt(did)%igrid)             !! All other io_form_output types
                  endif
               endif
-               if (RT_DOMAIN(did)%NLAKES.gt.0)  then
-                      if(nlst_rt(did)%io_form_outputs .ne. 0) then
+               if (RT_DOMAIN(did)%NLAKES>0)  then
+                      if(nlst_rt(did)%io_form_outputs /= 0) then
                          ! Output lakes in NWM format
-                         if(nlst_rt(did)%outlake .ne. 0) then
+                         if(nlst_rt(did)%outlake /= 0) then
                             call output_lakes_NWM(did,nlst_rt(did)%igrid)
                          endif
                       else
-                         if(nlst_rt(did)%outlake .eq. 1) then
+                         if(nlst_rt(did)%outlake == 1) then
 #ifdef MPP_LAND
                              call mpp_output_lakes( RT_DOMAIN(did)%lake_index, &
 #else
@@ -972,11 +972,12 @@ else
        , rt_domain(did)%CH_LNKRT_SL   &
        ,nlst_rt(did)%GwBaseSwCRT, gw2d(did)%ho, gw2d(did)%qgw_chanrt, &
        nlst_rt(did)%gwChanCondSw, nlst_rt(did)%gwChanCondConstIn, &
-       nlst_rt(did)%gwChanCondConstOut,rt_domain(did)%velocity &
+       nlst_rt(did)%gwChanCondConstOut,rt_domain(did)%velocity, &
+       RT_DOMAIN(did)%KU, RT_DOMAIN(did)%KD, RT_DOMAIN(did)%KF, RT_DOMAIN(did)%BFD &
        )
 endif
     
-    if((nlst_rt(did)%gwBaseSwCRT == 3) .and. (nlst_rt(did)%gwChanCondSw .eq. 1)) then
+    if((nlst_rt(did)%gwBaseSwCRT == 3) .and. (nlst_rt(did)%gwChanCondSw == 1)) then
       
            ! add/rm channel-aquifer exchange contribution
            

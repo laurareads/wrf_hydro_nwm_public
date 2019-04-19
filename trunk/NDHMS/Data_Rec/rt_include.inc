@@ -136,6 +136,11 @@
 #endif
   REAL, allocatable, DIMENSION(:)      :: HLINK      !head in link
   REAL, allocatable, DIMENSION(:)      :: ZELEV      !elevation of nodes for channel
+  real, allocatable, dimension(:)      :: KU         ! conveyances
+  real, allocatable, dimension(:)      :: KD         ! conveyances
+  real, allocatable, dimension(:)      :: KF         ! conveyances
+  real, allocatable, dimension(:)      :: BFD        ! bankful depth
+
   INTEGER, allocatable, DIMENSION(:)   :: CHANXI,CHANYJ !map chan to fine grid
   REAL,  DIMENSION(50)     :: BOTWID,TOPWID,HLINK_INIT,CHAN_SS,CHMann !Channel parms from table
   REAL,  DIMENSION(50)     :: TOPWIDCC, NCC  !topwidth and mannings n of compund

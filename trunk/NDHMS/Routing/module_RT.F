@@ -328,6 +328,11 @@ CONTAINS
      allocate( rt_domain(did)%ORDER(nsizes) )
      allocate( rt_domain(did)%QLINK(nsizes,2) )
 
+     allocate(rt_domain(did)%KU(nsizes))
+     allocate(rt_domain(did)%KD(nsizes))
+     allocate(rt_domain(did)%KF(nsizes))
+     allocate(rt_domain(did)%BFD(nsizes))
+
 #ifdef WRF_HYDRO_NUDGING
      allocate( rt_domain(did)%nudge(nsizes) )
 #endif
